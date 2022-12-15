@@ -1,4 +1,3 @@
-# first_cv
-This is the first project for CV learning.
+# Deep learning notes
 
 for test
