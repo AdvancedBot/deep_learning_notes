@@ -1,3 +1,3 @@
 # Deep learning notes
 
-for test
+学习笔记

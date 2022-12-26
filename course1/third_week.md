@@ -351,6 +351,30 @@ $da^{[2]},dz^{[2]},dw^{[2]},db^{[2]},da^{[1]},dz^{[1]},dw^{[1]},db^{[1]}$
 
 
 
+2.13的时候推导过，dw=x*dzT, 因为此处的dW是dw的转置，所以dW=dwT=dz*xT=dz*aT
+
+这里的a[1]就是第三个框里面x，da[1]=dx=W[2]T*dZ[2]
+
+这里的逐元素乘积*保证矩阵维度不变，其实就是每个元素都是需要进行一次这样的求导操作，因为前向传播时激活函数就是针对每个元素进行的操作
+
+![image-20221221213401968](./third_week.assets/image-20221221213401968.png)
+
+![image-20221221213723859](./third_week.assets/image-20221221213723859.png)
+
+实现后向传播算法有个技巧，矩阵的维度互相匹配。
+
+dz[1]可以理解为：前面的W[2].T*dz[2]是dL(a[2],y)/da[1]，后面的g‘(z[1])是da[1]/dz[1]相乘就是d(L(a[2],y))/da[1] *da[1]/dz[1]
+
+ 求dz^[1]^想象成三部分相乘的链式法则(dL/dz^[2]^)*(dz[2]/da^[1])*(da^[1]^/dz^[1])
+
+![image-20221221214846158](./third_week.assets/image-20221221214846158.png)
+
+
+
+![image-20221221215255184](./third_week.assets/image-20221221215255184.png)
+
+
+
 
 
 矩阵链式求导的基本原理是，如果有一个矩阵函数 $F(X)$，其中 $X$ 是一个 $n \times m$ 的矩阵，那么我们可以使用链式法则来求出 $\frac{\partial F}{\partial X}$，即矩阵函数 $F$ 对矩阵 $X$ 的导数。
@@ -366,3 +390,55 @@ $$\frac{\partial F}{\partial X} = \frac{\partial F}{\partial X_1} + \frac{\parti
 其中，$X_1, X_2, \dots, X_n$ 是矩阵 $X$ 的列向量，并且 $\frac{\partial F}{\partial X_i}$ 表示矩阵函数 $F$ 对矩阵 $X_i$ 的导数。
 
 最后，我们可以通过递归的方式来求出 $\frac{\partial F}{\partial X_i}$，即对于每一列 $X_i$，我们都可以通过链式法则
+
+
+
+
+
+## Random initialization
+
+当你训练一个神经网络时，随机初始化权重非常重要，对于logistic regression，可以将权重初始化为0。但如果将神经网络的各参数数组全部初始化为0，再使用梯度下降算法，那会完全无效。
+
+
+
+将Bias b初始化为0实际上是可行的，但是如果把W初始化为全零那就会出现问题了。
+
+这种初始化的问题在于，你给网络输入任何样本，你的$a^{[1]}_1和a^{[1]}_2$是一样的。
+
+因为两个隐藏单元的都在做完全一样的计算。
+
+![image-20221222143206518](./third_week.assets/image-20221222143206518.png)
+
+我们可以通过归纳法证明，每次训练迭代后，两个隐藏单元依然在计算完全相同的函数。
+
+
+
+因为很大一部分网络记忆dW是这样一个矩阵。
+
+![image-20221222143723113](./third_week.assets/image-20221222143723113.png)
+
+每一行的数值是一样的，那么就算之后使用梯度下降进行权重更新，那么更新之后的结果也是相同。
+
+![image-20221222143826725](./third_week.assets/image-20221222143826725.png)
+
+两个隐藏单元一开始就在做同样的计算，并且两个隐藏单元对输出单元的影响也一样大，那么在一次迭代后，同样的对称性依然存在，两个隐藏单元仍然是对称的。所以无论你训练多长时间的神经网络，两个隐藏单元仍然在计算完全一样的函数，这种情况下，多个隐藏单元就失去了意义，因为他们都在计算的都是同样的东西。这一点用处也没有，因为我们需要两个不同的隐藏单元，去计算不同的函数。
+
+解决方案：initialize your parameters randomly
+
+B完全没有这个对称性问题，所谓的破坏对称性问题，所以把B初始化为0是可以的
+
+![image-20221222145956822](./third_week.assets/image-20221222145956822.png)
+
+一般把权重初始化为特别小的随机值。
+
+因为如果这个数特别大，或者特别小的话（负数），梯度一开始就是很小，梯度下降算法会很慢，因此学习速率就会很慢。（tanh function and sigmoid function）
+
+
+
+if you don't have any sigmoid or tanh activation functions throughout your neural network, this is less of an issue but if you are doing binary classification and your output unit is a sigmoid function, then you know you just don't wan the initial parameters to be too large.
+
+所以这就是为什么设置0.01的原因，但不一定一定是0.01。
+
+当你训练一个单隐藏层神经网络时，这是一个相对较浅的神经网络，没有太多的隐藏层。设置为0.01是可以的，但是when you are training a very deep neural network，then you might want to pick a different constant as 0.01。but either way it will usually end up being a relatively small number。
+
+![image-20221222150137860](./third_week.assets/image-20221222150137860.png)
